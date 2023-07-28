@@ -1,0 +1,57 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+plt.style.use('fivethirtyeight')
+
+
+# reads data from an Excel file into a DataFrame, renames two columns according to the mapping in col_dict, 
+#and then drops the 'milk_type' column. The resulting DataFrame, df, will have the 'milk_type' column replaced
+#with 'Coconut milk type', and the 'Add water (%)' column replaced with 'per_water'. The 'milk_type' column will no
+#longer be present in the DataFrame.
+
+
+df = pd.read_excel(r'C:\Users\bhard\Downloads\coconut data.xlsx')
+col_dict = {'Coconut milk type':'milk_type', 
+            'Add water (%)':'per_water'} 
+df = df.rename(col_dict, axis = 1).drop(columns = 'milk_type')
+df.head()
+
+df.shape
+df.groupby('per_water').mean().T.plot()
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVR
+
+X = df.select_dtypes(float)
+y = df.per_water
+
+X_train, X_val, y_train, y_val = train_test_split(X,y, test_size=0.3, random_state=500)
+
+clf = Pipeline([
+    ('ss', StandardScaler()),
+    ('svr', SVR())
+])
+clf.fit(X_train, y_train)
+
+clf.score(X_train, y_train)
+
+param_grid = {
+    'svr__kernel': ['linear', 'poly', 'rbf'],
+    'svr__degree': [1,2,3,4], 
+    'ss__with_mean': [True, False]
+}
+
+grid = GridSearchCV(clf, param_grid, cv = 5)
+grid
+grid.fit(X_train, y_train)
+
+grid.best_estimator_
+
+grid.score(X_train, y_train)
+
+grid.score(X_val,y_val)
+
+clf.score(X_val,y_val)
